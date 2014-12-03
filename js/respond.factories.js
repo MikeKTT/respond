@@ -159,6 +159,7 @@ angular.module('respond.factories', [])
 			primaryEmail: site.PrimaryEmail, 
 			timeZone: site.TimeZone,
 			language: site.Language,
+			direction: site.Direction,
 			currency: site.Currency,
 			showCart: site.ShowCart,
 			showSettings: site.ShowSettings,
@@ -844,12 +845,14 @@ angular.module('respond.factories', [])
 			.then(function(res){
 			
 				var result = res.data;
-			
+				
 				// get dates and locations
 				result.LocalBeginDate = utilities.convertToLocalDate(result.BeginDate, offset);
 				result.LocalBeginTime = utilities.convertToLocalTime(result.BeginDate, offset);
 				result.LocalEndDate = utilities.convertToLocalDate(result.EndDate, offset);
 				result.LocalEndTime = utilities.convertToLocalTime(result.EndDate, offset);
+				
+				// parse latitude and longitude
 				result.Latitude = utilities.parseLatitude(result.LatLong);
 				result.Longitude = utilities.parseLongitude(result.LatLong);
 				
