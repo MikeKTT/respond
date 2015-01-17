@@ -9,9 +9,6 @@ class Publish
 		// publish sitemap
 		Publish::PublishSiteMap($siteId);
 		
-		// publish all CSS
-		Publish::PublishAllCSS($siteId);	
-
 		// publish all pages
 		Publish::PublishAllPages($siteId);
 
@@ -24,14 +21,21 @@ class Publish
 		// publish site json
 		Publish::PublishSiteJSON($siteId);
 		
-		// publish common js
+		// publish common js (also combines JS and publishes plugins)
 		Publish::PublishCommonJS($siteId);
 		
 		// publish common css
 		Publish::PublishCommonCSS($siteId);
 		
 		// publish controller
-		Publish::PublishCommon($siteId);	
+		Publish::PublishCommon($siteId);
+		
+		// publish all CSS
+		Publish::PublishAllCSS($siteId);
+		
+		// publish locales
+		Publish::PublishLocales($siteId);
+		
 	}
 	
 	// publishes common site files
@@ -55,6 +59,24 @@ class Publish
 		
 		// setup htaccess
 		Publish::SetupHtaccess($site);
+		
+	}
+	
+	// publishes locales for the site
+	public static function PublishLocales($siteId){
+        
+        $site = Site::GetBySiteId($siteId);
+      	
+		// copy templates/respond
+		$locales_src = APP_LOCATION.'/site/locales';
+		$locales_dest = SITES_LOCATION.'/'.$site['FriendlyId'].'/locales';
+		
+		// create libs directory if it does not exist
+		if(!file_exists($locales_dest)){
+			mkdir($locales_dest, 0755, true);	
+			
+			Utilities::CopyDirectory($locales_src, $locales_dest);
+		}
 		
 	}
 	
@@ -90,9 +112,23 @@ class Publish
 			file_put_contents($htaccess, $contents); // save to file			
 		}
 		else if($site['UrlMode'] == 'static'){
-			$contents = 'RewriteEngine On'.PHP_EOL.
-						'RewriteCond %{REQUEST_FILENAME} !-f'.PHP_EOL.
-						'RewriteRule ^([^\.]+)$ $1.html [NC,L]';
+						
+			$contents = '<IfModule mod_rewrite.c>'.PHP_EOL.
+				'RewriteEngine On'.PHP_EOL.
+				'RewriteCond %{REQUEST_FILENAME} !-f'.PHP_EOL.
+				'RewriteRule ^([^\.]+)$ $1.html [NC,L]'.PHP_EOL.
+				'</IfModule>'.PHP_EOL.
+				'<IfModule mod_expires.c>'.PHP_EOL.
+				'ExpiresActive On '.PHP_EOL.
+				'ExpiresDefault "access plus 1 month"'.PHP_EOL.
+				'ExpiresByType image/x-icon "access plus 1 year"'.PHP_EOL.
+				'ExpiresByType image/gif "access plus 1 month"'.PHP_EOL.
+				'ExpiresByType image/png "access plus 1 month"'.PHP_EOL.
+				'ExpiresByType image/jpg "access plus 1 month"'.PHP_EOL.
+				'ExpiresByType image/jpeg "access plus 1 month"'.PHP_EOL.
+				'ExpiresByType text/css "access 1 month"'.PHP_EOL.
+				'ExpiresByType application/javascript "access plus 1 year"'.PHP_EOL.
+				'</IfModule>';	
 			
 			file_put_contents($htaccess, $contents); // save to file
 		}
@@ -383,6 +419,174 @@ class Publish
 			Publish::InjectStates($site);
 		}
 		
+		// publish plugins
+		Publish::PublishPlugins($site);
+		
+		// combine JS
+		Publish::CombineJS($site);
+		
+	}
+	
+	// combines JS files
+	public static function CombineJS($site){
+		
+		// combine JS
+		$js_dir = SITES_LOCATION.'/'.$site['FriendlyId'].'/js/';
+		
+		//get all image files with a .less ext
+		$files = glob($js_dir . "*.js");
+		
+		// combined js
+		$combined_js = '';
+
+		// walk through file names
+		foreach($files as $file){
+		
+			if(strpos($file, 'respond.min') === FALSE){
+			 	if(file_exists($file)){
+			    	$content = file_get_contents($file);
+			    
+			    	$combined_js .= $content;	
+				}
+			}
+		   
+		}
+		
+		// remove comments
+		$pattern = '/(?:(?:\/\*(?:[^*]|(?:\*+[^*\/]))*\*+\/)|(?:(?<!\:|\\\|\')\/\/.*))/';
+		$combined_js = preg_replace($pattern, '', $combined_js);
+		
+		// remove whitespace
+		//$combined_js = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $combined_js);
+		$combined_js = str_replace(array("\t", '  ', '    ', '    '), '', $combined_js);
+
+		// publish combined js
+	    $combined_js_file = SITES_LOCATION.'/'.$site['FriendlyId'].'/js/respond.min.js';
+	    
+	    // put combined js
+	    file_put_contents($combined_js_file, $combined_js);
+		
+	}
+	
+	// publishes plugins for the site
+	public static function PublishPlugins($site){
+		
+		// open plugins direcotry
+        if($handle = opendir(APP_LOCATION.'plugins')){
+        
+		    $blacklist = array('.', '..');
+		    
+		    // holds all directives to be added
+		    $directives = '';
+		    
+		    // holds all css to be included
+		    $css = '';
+		    
+		    // walk through directories
+		    while (false !== ($file = readdir($handle))) {
+		    
+		        if (!in_array($file, $blacklist)) {
+		            $dir = $file;
+		            
+		            // get directives to be added
+		            $directive = APP_LOCATION.'plugins/'.$dir.'/publish/directive.js';
+		            
+		            if(file_exists($directive)){
+		            	$content = file_get_contents($directive);
+		            	$directives .= $content;
+		            }
+		            
+		            // get css to be added
+		            $styles = APP_LOCATION.'plugins/'.$dir.'/publish/styles.css';
+		            
+		            if(file_exists($styles)){
+		            	$content = file_get_contents($styles);
+		            	$css .= $content;
+		            }
+		            
+		            // source templates directory
+		            $src_dir = APP_LOCATION.'plugins/'.$dir.'/publish/templates';
+		            
+		            // add templates
+		            if(file_exists($src_dir)){
+		            
+		            	// destination templates directory
+		            	$dest_dir = SITES_LOCATION.'/'.$site['FriendlyId'].'/templates/'.$dir;
+		            
+						// create template directory
+						if(!file_exists($dest_dir)){
+							mkdir($dest_dir, 0755, true);	
+						}
+						
+						// copies a directory
+						Utilities::CopyDirectory($src_dir, $dest_dir);
+		            }
+		            
+		            // source resources directory
+		            $src_rsc_dir = APP_LOCATION.'plugins/'.$dir.'/publish/resources';
+		            
+		            // add templates
+		            if(file_exists($src_dir)){
+		            
+		            	// destination templates directory
+		            	$dest_rsc_dir = SITES_LOCATION.'/'.$site['FriendlyId'].'/plugins';
+		            
+						// create plugins directory
+						if(!file_exists($dest_rsc_dir)){
+							mkdir($dest_rsc_dir, 0755, true);	
+						}
+						
+						$dest_rsc_dir = $dest_rsc_dir.'/'.$dir;
+						
+						// create plugin directory
+						if(!file_exists($dest_rsc_dir)){
+							mkdir($dest_rsc_dir, 0755, true);	
+						}
+						
+						// copies a directory
+						Utilities::CopyDirectory($src_rsc_dir, $dest_rsc_dir);
+		            }
+		            
+		            
+		        }
+		        
+		    }
+		    
+		    closedir($handle);
+		}
+		
+		// replace directives
+		if($directives != ''){
+		
+			// get directive
+			$directive_file = SITES_LOCATION.'/'.$site['FriendlyId'].'/js/respond.site.directives.js';
+			
+			if(file_exists($directive_file)){
+			
+				// get directives
+				$content = file_get_contents($directive_file);
+				
+				// add new directives
+				$content = str_replace('// #published-directives', $directives, $content);
+				
+				// update file
+				file_put_contents($directive_file, $content);
+				
+			}
+			
+		}
+		
+		// add styles
+		if($css != ''){
+		
+			// get plugins
+			$plugins_file = SITES_LOCATION.'/'.$site['FriendlyId'].'/css/plugins.css';
+			
+			// update file
+			file_put_contents($plugins_file, $css);
+			
+		}
+				
 	}
 	
 	// injects states into sites/js/respond.site.js
@@ -923,6 +1127,55 @@ class Publish
 		Utilities::SaveContent($dest.'/', 'sitemap.xml', $content);
 	}
 	
+	// gets errors for teh less files
+	public static function GetLESSErrors($site, $name){
+	
+		// get references to file
+	    $lessDir = SITES_LOCATION.'/'.$site['FriendlyId'].'/themes/'.$site['Theme'].'/styles/';
+	    $cssDir = SITES_LOCATION.'/'.$site['FriendlyId'].'/css/';
+	    
+	    // get reference to config file
+	    $configFile = SITES_LOCATION.'/'.$site['FriendlyId'].'/themes/'.$site['Theme'].'/configure.json';
+
+	    $lessFile = $lessDir.$name.'.less';
+	    $cssFile = $cssDir.$name.'.css';
+
+	    // create css directory (if needed)
+	    if(!file_exists($cssDir)){
+			mkdir($cssDir, 0755, true);	
+		}
+
+	    if(file_exists($lessFile)){
+	    	$content = file_get_contents($lessFile);
+
+	    	$less = new lessc;
+	    	
+	    	try{
+		    	
+		    	$css = $content;
+		    	
+		    	// set configurations
+		    	$css = Publish::SetConfigurations($configFile, $css);
+		    	
+		    	// compile less to css
+		    	$css = $less->compile($css);
+		    	
+		    	return NULL;
+		    	
+	    	}
+	    	catch(exception $e){
+				return $e->getMessage();
+			}
+			
+    	}
+    	else{
+    		return NULL;
+    	}
+
+	}
+	
+	
+	
 	// publishes a specific css file
 	public static function PublishCSS($site, $name){
 	
@@ -956,19 +1209,30 @@ class Publish
 		    	// compile less to css
 		    	$css = $less->compile($css);
 		    	
+		    	// compress css, #ref: http://manas.tungare.name/software/css-compression-in-php/
+		    	
+		    	// remove comments
+				$css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
+		    	
+		    	// Remove space after colons
+				$css = str_replace(': ', ':', $css);
+		    	
+		    	// Remove whitespace
+				$css = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $css);
+		    	
 		    	// put css into file
 		    	file_put_contents($cssFile, $css);
 		    	
-		    	return true;
+		    	return $css;
 		    	
 	    	}
 	    	catch(exception $e){
-				return false;
+				return NULL;
 			}
 			
     	}
     	else{
-    		return false;
+    		return NULL;
     	}
 
 	}
@@ -1041,6 +1305,9 @@ class Publish
 		
 		//get all image files with a .less ext
 		$files = glob($lessDir . "*.less");
+		
+		// combined css
+		$combined_css = '';
 
 		//print each file name
 		foreach($files as $file){
@@ -1049,9 +1316,35 @@ class Publish
 			$filename = $f_arr[$count-1];
 			$name = str_replace('.less', '', $filename);
 
-			Publish::PublishCSS($site, $name);
+			if(strpos($name, 'respond.min') === FALSE){
+				$combined_css .= Publish::PublishCSS($site, $name);
+			}
 		}
-
+		
+		// get plugins CSS
+		$plugins_file = SITES_LOCATION.'/'.$site['FriendlyId'].'/css/plugins.css';
+		
+		if(file_exists($plugins_file)){
+			$css = file_get_contents($plugins_file);
+			
+			// remove comments
+			$css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
+	    	
+	    	// Remove space after colons
+			$css = str_replace(': ', ':', $css);
+	    	
+	    	// Remove whitespace
+			$css = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $css);
+			
+			$combined_css .= $css;
+		}
+		
+		// publish combined css
+	    $css_file = SITES_LOCATION.'/'.$site['FriendlyId'].'/css/respond.min.css';
+	    
+	    // put combined css
+	    file_put_contents($css_file, $combined_css);
+	 
 	}
 
 	// publishes a page
@@ -1067,7 +1360,11 @@ class Publish
 			
 			if($site['UrlMode'] == 'static'){ // for sites using static html pages (URL-based routing)
 				Publish::PublishDynamicPage($page, $site, $preview, $remove_draft);
-				Publish::PublishStaticPage($page, $site, $preview, $remove_draft);
+				
+				// do not publish a static page for include only pages
+				if($page['IncludeOnly'] == 0){
+					Publish::PublishStaticPage($page, $site, $preview, $remove_draft);
+				}
 				
 				// inject controllers
 				Publish::InjectControllers($site);
@@ -1218,7 +1515,7 @@ class Publish
 		if(file_exists($layout)){
         	$layout_html = file_get_contents($layout);
         
-			$html = str_replace('<body ui-view></body>', '<body ng-controller="PageCtrl" page="'.$page['PageId'].'">'.$layout_html.'</body>', $html);
+			$html = str_replace('<body ui-view></body>', '<body ng-controller="PageCtrl" page="'.$page['PageId'].'" class="'.$page['Stylesheet'].'">'.$layout_html.'</body>', $html);
         }
 		
 		// get draft/content
@@ -1250,6 +1547,7 @@ class Publish
 		$html = str_replace('{{site.Name}}', $site['Name'], $html);
 		$html = str_replace('{{site.Language}}', $site['Language'], $html);
 		$html = str_replace('{{site.Direction}}', $site['Direction'], $html);
+		$html = str_replace('{{page.FullStylesheetUrl}}', 'css/'.$page['Stylesheet'].'.css', $html);
 		
 		// update base
 		$html = str_replace('<base href="/">', '<base href="'.$base.'">', $html);

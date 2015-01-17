@@ -25,7 +25,8 @@
 									<img ng-src="{{setup.themes}}/{{theme.id}}/screenshot.png">
 									<div class="carousel-caption">
 										 <p>
-										 	<b>{{theme.name}}</b>{{theme.desc}}
+										 	<b>{{theme.name | i18next}}</b>
+										 	<span class="allow-breaks">{{theme.desc | i18next}}</span>
 										 
 										 	<a ng-show="theme.id != themeId"
 										 		ng-click="showApply(theme)">{{'Select Theme' | i18next}}</a>
@@ -79,7 +80,7 @@
 		    <div class="modal-body">
 		    
 		    <p>
-		    	{{'Confirm you want to apply' | i18next}}: <strong>{{temp.name | toHuman}}</strong>
+		    	{{'Confirm you want to apply' | i18next}}: <strong>{{temp.name | i18next | toHuman}}</strong>
 		    </p>
 		    
 		    <p>
@@ -128,7 +129,7 @@
 		    <div class="modal-body">
 		    
 		    <p>
-		        {{'Confirm you want to reset' | i18next}} <strong>{{temp.name}}</strong>
+		        {{'Confirm you want to reset' | i18next}} <strong>{{temp.name | i18next | toHuman}}</strong>
 		    </p>
 		    
 		    <p>

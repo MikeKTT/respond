@@ -85,6 +85,7 @@ angular.module('respond.factories', [])
 	
 	// create a site
 	site.create = function(friendlyId, name, email, password, passcode, timeZone, language, userLanguage, theme, 
+		firstName, lastName,
 		successCallback, failureCallback){
 	
 		// set params
@@ -97,7 +98,9 @@ angular.module('respond.factories', [])
 			timeZone: timeZone, 
 			language: language, 
 			userLanguage: userLanguage, 
-			theme: theme
+			theme: theme,
+			firstName: firstName,
+			lastName: lastName
 		}
 	
 		// set post to URL Encoded
@@ -924,12 +927,12 @@ angular.module('respond.factories', [])
 	}
 	
 	// save settings
-	page.saveSettings = function(pageId, name, friendlyId, description, keywords, callout, layout, stylesheet, 
+	page.saveSettings = function(pageId, name, friendlyId, description, keywords, callout, layout, stylesheet, includeOnly,
 									beginDate, endDate, location, latitude, longitude, callback){
 		
 		// set params
 		var params = {pageId: pageId, name: name, friendlyId: friendlyId, description: description, keywords: keywords, 
-				   		callout: callout,  layout: layout, stylesheet: stylesheet,
+				   		callout: callout,  layout: layout, stylesheet: stylesheet, includeOnly: includeOnly,
 				   		beginDate: beginDate, endDate: endDate,
 				   		location: location, latitude: latitude, longitude: longitude};
 			
@@ -2271,4 +2274,36 @@ angular.module('respond.factories', [])
 	return product;	
 })
 
+// snippet factory
+.factory('Snippet', function($http, Setup){
+	
+	var snippet = {};
+	
+	// retrieve themes
+	snippet.list = function(callback){
+	
+		// post to API
+		$http.get(Setup.api + '/snippet')
+			.success(callback);
+	}
+		
+	// retrieves content for a snippet
+	snippet.content = function(snippet, callback){
+	
+		// set params
+		var params = {
+			snippet: snippet
+			};
+			
+		// set post to URL Encoded
+		$http.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
+	
+		// post to API
+		$http.post(Setup.api + '/snippet/content', $.param(params))
+			.success(callback);
+	}
+		
+	return snippet;
+	
+})
 ;

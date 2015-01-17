@@ -91,6 +91,20 @@ angular.module('respond.directives', [])
     };
 })
 
+
+.directive('respondPopover', function() {
+    return {
+        // attribute
+        restrict: 'A',
+       
+        link: function(scope, element, attrs) {
+        
+        	$(element).popover('show'); 	
+          
+        }
+    };
+})
+
 .directive('respondCreateId', function() {
     return {
         // attribute
@@ -248,6 +262,7 @@ angular.module('respond.directives', [])
 	        	 	showInput: true,
 					showInitial: true,
 					showPalette: true,
+					showAlpha: true,
 					showSelectionPalette: true,
 					preferredFormat: "hex",
 					palette: [
@@ -278,7 +293,10 @@ angular.module('respond.directives', [])
 					    
 					    scope.$apply(
 						    function(){
-							    scope.current.selected = hex;
+							    
+							    if(scope.current !== undefined){
+							    	scope.current.selected = hex;
+							    }
 						    }
 					    )
 

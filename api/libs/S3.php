@@ -10,7 +10,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		// check to see if bucket exists
@@ -50,7 +51,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -76,7 +78,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -101,7 +104,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -133,8 +137,6 @@ class S3
 			    'Key' => $key
 			));
 			
-			
-		    echo '$key='.$object['Key'].' CopySource='.$source.' Destination='.$dest;
 		}
 		
 		/*
@@ -154,7 +156,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -175,7 +178,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -203,7 +207,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -317,7 +322,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -366,7 +372,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];
@@ -429,7 +436,8 @@ class S3
 		// create AWS client
 		$client = Aws\S3\S3Client::factory(array(
 		    'key'    => S3_KEY,
-		    'secret' => S3_SECRET
+		    'secret' => S3_SECRET,
+			'region' => S3_LOCATION
 		));
 		
 		$bucket = $site['Bucket'];

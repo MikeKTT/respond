@@ -266,6 +266,10 @@ class Utilities
 		  	continue;
 		  }
 		  
+		  if($row['IncludeOnly']==1){
+			  continue;
+		  }
+		  
 		  // set URL divider based on URL mode
 		  $divider = '/#/';
 		  

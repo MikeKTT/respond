@@ -10,9 +10,22 @@ angular.module('respond.site.directives', [])
 			type: '@'
 		},
 		replace: true,
-		templateUrl: 'templates/respond/menu.html',
+		templateUrl: function(element, attr){
+			if(attr.standalone){
+				return 'templates/respond/menu-standalone.html';
+			}
+			else{
+				return 'templates/respond/menu.html';
+			}
+		},
 		link: function(scope, element, attr){
-		
+			
+			scope.standalone = false;
+			
+			if(attr.standalone){
+				scope.standalone = attr.standalone;
+			}
+			
 			scope.currentPageId = $rootScope.page.PageId;
 			
 			Menu.list(scope.type, function(data){
@@ -300,7 +313,12 @@ angular.module('respond.site.directives', [])
 				scope.pagesize = attr.pagesize;
 			}
 			
-			scope.current = 0;
+			scope.current = 0; // current page
+			scope.count = 0; // count of all items in the list
+			scope.pageCount = 1;  // count of pages
+			
+			// hide pager by default
+			scope.showPager = false;
 			
 			// set a nice defult
 			scope.orderby = 'Name';
@@ -330,11 +348,18 @@ angular.module('respond.site.directives', [])
 				// list page
 				Page.list(scope.type, scope.pagesize, scope.current, scope.orderby, 
 					function(data){  // success
-				
-						console.log('[respond.debug] Page.list');
-						console.log(data);
 						
+						// set list
 						scope.pages = data;
+						
+						// show pager
+						if(scope.current < (scope.pageCount-1)){
+							scope.showPager = true;
+						}
+						else{
+							scope.showPager = false;
+						}
+						
 						
 					},
 					function(){ // failure
@@ -344,8 +369,20 @@ angular.module('respond.site.directives', [])
 				
 			}
 			
-			// page
-			list();
+			// get page count
+			Page.count(scope.type, function(data){  // success
+				
+				scope.count = data.count;
+				scope.pageCount = Math.ceil(scope.count / scope.pagesize);
+				
+				// list pages
+				list();
+					
+				},
+				function(){ // failure
+					
+					
+				});
 		
 			// page list
 			scope.next = function(){
@@ -1259,5 +1296,7 @@ angular.module('respond.site.directives', [])
 	
 })
 
+// published directives
+// #published-directives
 
 ;

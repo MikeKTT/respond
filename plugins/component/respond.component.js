@@ -55,7 +55,7 @@ respond.component.slideshow = {
 		
 		// build html
 		var html = '<span class="image"><img src="' + image.fullUrl + '" title="">' +
-				   '<span class="caption"><input type="text" value="" placeholder="Enter Caption" maxwidth="140"></span>' +
+				   '<span class="caption"><input type="text" value="" placeholder="' + i18n.t('Enter caption') + '" maxwidth="140"></span>' +
 				   '<a class="remove-image fa fa-minus-circle"></a></span>';
 				   
 		$(node).find('.images').append(html);
@@ -136,7 +136,7 @@ respond.component.slideshow = {
 			// build html
 			html +=	'<span class="image">' + image + 
 					'<span class="caption">' +
-					'<input type="text" value="' + title + '" placeholder="Enter caption" maxwidth="140">' +
+					'<input type="text" value="' + title + '" placeholder="' + i18n.t('Enter caption') + '" maxwidth="140">' +
 					'</span>' +
 					'<a class="remove-image fa fa-minus-circle"></a>' +
 					'</span>';
@@ -220,7 +220,7 @@ respond.component.map = {
 		// build html
 		var html = respond.editor.defaults.elementMenu +
 					'<i class="in-textbox fa fa-map-marker"></i>' +
-					'<input type="text" value="" spellcheck="false" maxlength="512" placeholder="1234 Main Street, Some City, LA 90210">';
+					'<input type="text" value="" spellcheck="false" maxlength="512" placeholder="">';
 					
 		// tag attributes
 		var attrs = [];
@@ -250,7 +250,7 @@ respond.component.map = {
 		// build html
 		var html = respond.editor.defaults.elementMenu +
 					'<i class="in-textbox fa fa-map-marker"></i>' +
-					'<input type="text" value="' + address + '" spellcheck="false" maxlength="512" placeholder="1234 Main Street, Some City, LA 90210">';
+					'<input type="text" value="' + address + '" spellcheck="false" maxlength="512" placeholder="' + i18n.t('1234 Main Street, Some City, LA 90210') + '">';
 					
 		// tag attributes
 		var attrs = [];
@@ -528,9 +528,6 @@ respond.component.form = {
 		attrs['class'] = 'respond-form';
 		attrs['data-cssclass'] = '';
 		attrs['data-action'] = '';
-		attrs['data-success'] = 'Form submitted successfully.';
-		attrs['data-error'] = 'There was an error submitting your form.';
-		attrs['data-submit'] = 'Submit';
 		attrs['data-field-count'] = '1';
 		
 		// append element to the editor
@@ -590,9 +587,6 @@ respond.component.form = {
 		attrs['class'] = 'respond-form';
 		attrs['data-cssclass'] = $(node).attr('class');
 		attrs['data-action'] = $(node).attr('action');
-		attrs['data-success'] = $(node).attr('success');
-		attrs['data-error'] = $(node).attr('error');
-		attrs['data-submit'] = $(node).attr('submit');
 		
 		// return element
 		return utilities.element('div', attrs, html);
@@ -629,10 +623,6 @@ respond.component.form = {
 		attrs['class'] = $(node).attr('data-cssclass');
 		attrs['type'] = $(node).attr('data-type');
 		attrs['action'] = $(node).attr('data-action');
-		attrs['success'] = $(node).attr('data-success');
-		attrs['error'] = $(node).attr('data-error');
-		attrs['submit'] = $(node).attr('data-submit');
-		
 		
 		// return element
 		return utilities.element('respond-form', attrs, html);
@@ -930,9 +920,6 @@ respond.component.login = {
 		attrs['data-id'] = id;
 		attrs['class'] = 'respond-login';
 		attrs['data-cssclass'] = '';
-		attrs['data-success'] = 'Login successful.';
-		attrs['data-error'] = 'Your username or password is invalid. Please try again.';
-		attrs['data-button'] = 'Login';
 		
 		// append element to the editor
 		respond.editor.append(
@@ -959,9 +946,6 @@ respond.component.login = {
 		attrs['data-id'] = id;
 		attrs['class'] = 'respond-login';
 		attrs['data-cssclass'] = $(node).attr('class');
-		attrs['data-success'] = $(node).attr('success');
-		attrs['data-error'] = $(node).attr('error');
-		attrs['data-button'] = $(node).attr('button');
 		
 		// return element
 		return utilities.element('div', attrs, html);
@@ -975,9 +959,6 @@ respond.component.login = {
 		var attrs = [];
 		attrs['id'] = $(node).attr('data-id');
 		attrs['class'] = $(node).attr('data-cssclass');
-		attrs['success'] = $(node).attr('data-success');
-		attrs['error'] = $(node).attr('data-error');
-		attrs['button'] = $(node).attr('data-button');
 		
 		// return element
 		return utilities.element('respond-login', attrs, '');
@@ -1008,10 +989,6 @@ respond.component.registration = {
 		attrs['data-id'] = id;
 		attrs['class'] = 'respond-registration';
 		attrs['data-cssclass'] = '';
-		attrs['data-success'] = 'Registration successful.';
-		attrs['data-error'] = 'There was a problem registering. Please try again.';
-		attrs['data-required'] = 'All fields are required.';
-		attrs['data-button'] = 'Register';
 		
 		// append element to the editor
 		respond.editor.append(
@@ -1039,10 +1016,6 @@ respond.component.registration = {
 		attrs['data-id'] = id;
 		attrs['class'] = 'respond-registration';
 		attrs['data-cssclass'] = $(node).attr('class');
-		attrs['data-success'] = $(node).attr('success');
-		attrs['data-error'] = $(node).attr('error');
-		attrs['data-required'] = $(node).attr('required');
-		attrs['data-button'] = $(node).attr('button');
 		
 		// return element
 		return utilities.element('div', attrs, html);
@@ -1056,10 +1029,6 @@ respond.component.registration = {
 		var attrs = [];
 		attrs['id'] = $(node).attr('data-id');
 		attrs['class'] = $(node).attr('data-cssclass');
-		attrs['success'] = $(node).attr('data-success');
-		attrs['error'] = $(node).attr('data-error');
-		attrs['required'] = $(node).attr('data-required');
-		attrs['button'] = $(node).attr('data-button');
 		
 		// return element
 		return utilities.element('respond-registration', attrs, '');
@@ -1548,5 +1517,79 @@ respond.component.tabset = {
 };
 
 respond.component.tabset.init();
+
+// menu component
+respond.component.menu = {
+
+	// creates list
+	create:function(){
+	
+		// generate uniqId
+		var id = respond.editor.generateUniqId('menu', 'menu');
+		
+		// build html
+		var html = respond.editor.defaults.elementMenu +
+					'<div class="title respond-element"><i class="fa fa-bars"></i> <span node-text="type">Not Selected</span></div>';		
+					
+		// tag attributes
+		var attrs = [];
+		attrs['id'] = id;
+		attrs['data-id'] = id;
+		attrs['class'] = 'respond-menu';
+		attrs['data-type'] = '';
+		
+		// append element to the editor
+		respond.editor.append(
+			 utilities.element('div', attrs, html)
+		);
+	
+		return true;
+		
+	},
+	
+	// parse menu
+	parse:function(node){
+		
+		// get params
+		var id = $(node).attr('id');
+		var type = $(node).attr('type');
+		
+		// build html
+		var html = respond.editor.defaults.elementMenu +
+					'<div class="title respond-element"><i class="fa fa-bars"></i> <span node-text="type">' + type + '</span></div>';
+		
+		// tag attributes
+		var attrs = [];
+		attrs['id'] = id;
+		attrs['data-id'] = id;
+		attrs['data-type'] = $(node).attr('type');
+		attrs['class'] = 'respond-menu';
+		
+		utilities.element('div', attrs, html)
+		
+		// return element
+		return utilities.element('div', attrs, html);
+				
+	},
+	
+	// generate menu
+	generate:function(node){
+
+		// tag attributes
+		var attrs = [];
+		attrs['id'] = $(node).attr('data-id');
+		attrs['type'] = $(node).attr('data-type');
+		attrs['standalone'] = 'true';
+		
+		// return element
+		return utilities.element('respond-menu', attrs, '');
+		
+	},
+	
+	// config list
+	config:function(node, form){}
+	
+};
+
 
 

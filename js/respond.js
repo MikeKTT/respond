@@ -24,14 +24,29 @@ angular.module('respond', ['ui.router',
 // configure the module
 .config(function($stateProvider, $locationProvider, $urlRouterProvider, $i18nextProvider, $httpProvider, Setup) {
 
+	var lang = Setup.language;
+
+	// retrieve user from session storage
+	if(sessionStorage.user != null){
+		var user = JSON.parse(sessionStorage.user);
+		
+		if(user != null){
+			lang = user.Language;
+		}
+	}
+
 	// config $il8nextProvider
 	$i18nextProvider.options = {
-        lng: Setup.language,
+        lng: lang,
+        getAsync : false,
         useCookie: false,
         useLocalStorage: false,
         fallbackLng: Setup.language,
         resGetPath: 'locales/__lng__/__ns__.json'
     };
+	
+	// set language for moment
+	moment.lang(lang);
 	
 	// set authInterceptor
 	$httpProvider.interceptors.push('authInterceptor');
@@ -67,7 +82,6 @@ angular.module('respond', ['ui.router',
 		
 		.state('app', {
 		  url: "/app",
-		  abstract: true,
 		  templateUrl: "templates/menu.html",
 		  controller: 'MenuCtrl'
 		})
@@ -271,6 +285,10 @@ angular.module('respond', ['ui.router',
 
 	// set app title
 	$rootScope.title = Setup.app;
+	$rootScope.direction = Setup.direction;
+	$rootScope.css = Setup.css;
+	$rootScope.firstLogin = false;
+	$rootScope.introShown = true;
 	
 	// retrieve site from session storage
 	if($window.sessionStorage.site != null){
@@ -292,8 +310,32 @@ angular.module('respond', ['ui.router',
 	if($window.sessionStorage.editorItems != null){
 	
 		var str = $window.sessionStorage.editorItems;
+		var data = JSON.parse(str);
 		
-		$rootScope.editorItems = JSON.parse(str);
+		$rootScope.editorItems = data;
+		
+		// set cache to true so it won't reload scripts
+		$.ajaxSetup({
+		    cache: true
+		});
+		
+		// holds loaded scripts
+		var loaded = [];
+		
+		// load scripts for all plugins
+		for(x=0; x<data.length; x++){
+		
+			if(data[x].script != undefined){
+				var url = Setup.url + '/' + data[x].script;
+				
+				if(loaded.indexOf(url) == -1){
+					$.getScript(url);
+					loaded.push(url);
+					if(Setup.debug)console.log('[respond.debug] load plugin script='+url);
+				}
+			}
+			
+		}
 	}
 		
 });

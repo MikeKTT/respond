@@ -35,8 +35,11 @@ angular.module('respond.controllers', [])
 					$rootScope.user = data.user;
 					$window.sessionStorage.user = JSON.stringify(data.user);
 					
-					// set start
-					$state.go(data.start);
+					var start = data.start;
+					
+					// set firstLogin
+					$rootScope.firstLogin = data.firstLogin;
+					$rootScope.introShown = false;
 					
 					// retrieve site
 					Site.retrieve(function(data){
@@ -46,6 +49,9 @@ angular.module('respond.controllers', [])
 						// set site in $rootScope, session
 						$rootScope.site = data;
 						$window.sessionStorage.site = JSON.stringify(data);
+						
+						// set start
+						$state.go(start);
 							
 					});
 					
@@ -61,6 +67,29 @@ angular.module('respond.controllers', [])
 						}
 						$rootScope.editorItems = data;
 						$window.sessionStorage.editorItems = JSON.stringify(data);
+						
+						// set cache to true so it won't reload scripts
+						$.ajaxSetup({
+						    cache: true
+						});
+						
+						// holds loaded scripts
+						var loaded = [];
+						
+						// load scripts for all plugins
+						for(x=0; x<data.length; x++){
+		
+							if(data[x].script != undefined){
+								var url = Setup.url + '/' + data[x].script;
+								
+								if(loaded.indexOf(url) == -1){
+									$.getScript(url);
+									loaded.push(url);
+									if(Setup.debug)console.log('[respond.debug] load plugin script='+url);
+								}
+							}
+							
+						}
 						
 					});
 					
@@ -491,8 +520,13 @@ angular.module('respond.controllers', [])
 		
 		message.showMessage('progress');
 		
+		// default first and last name
+		var firstName = $('#firstName').val();
+		var lastName = $('#lastName').val();
+		
+		// create the site
 		Site.create($scope.friendlyId, $scope.name, $scope.email, $scope.password, $scope.passcode, $scope.timeZone, 
-			$scope.siteLanguage, $scope.userLanguage, $scope.themeId, 
+			$scope.siteLanguage, $scope.userLanguage, $scope.themeId, firstName, lastName,
 			function(){  // success
 				message.showMessage('success');
 				
@@ -509,12 +543,25 @@ angular.module('respond.controllers', [])
 })
 
 // menu controller
-.controller('MenuCtrl', function($scope, $rootScope, $state, Setup, Site, User) {
+.controller('MenuCtrl', function($scope, $rootScope, $state, $window, $i18next, Setup, Site, User) {
 
 	// get user from session
 	$scope.user = $rootScope.user;
 	$scope.site = $rootScope.site;
 	$scope.sites = Setup.sites;
+	
+	// logs a user out of the site
+	$scope.logout = function(){
+		$window.sessionStorage.removeItem('user');
+		
+		// set language back
+		$i18next.options.lng =  Setup.language;
+		moment.lang(Setup.language);
+		
+		// go to login
+		$state.go('login', {'id': $scope.site.FriendlyId});
+		
+	}
 	
 	// publishes a site
 	$scope.republish = function(){
@@ -794,6 +841,12 @@ angular.module('respond.controllers', [])
 		
 		$scope.pages = data;
 		$scope.loading = false;
+		
+		setTimeout(function(){
+			$scope.setupTour();
+		}, 1);
+		
+		
 	});
 	
 	// list stylesheets
@@ -816,10 +869,26 @@ angular.module('respond.controllers', [])
 		$scope.layouts = data;
 	});
 	
+	// shows the tour
+	$scope.setupTour = function(){
+		
+		// show the intro tour
+		if($rootScope.firstLogin == true && $rootScope.introShown == false){
+			tour.intro();
+			$rootScope.introShown = true;
+		}
+	}
+	
+	// shows the tour
+	$scope.showIntro = function(){
+		tour.intro();
+	}
+	
+	
 })
 
 // content controller
-.controller('ContentCtrl', function($scope, $rootScope, $stateParams, $sce, Setup, Site, Page, Version, PageType, Image, Icon, Theme, Layout, Stylesheet, Editor, Translation, File, Product) {
+.controller('ContentCtrl', function($scope, $rootScope, $stateParams, $sce, $timeout, Setup, Site, Page, Version, PageType, Image, Icon, Theme, Layout, Stylesheet, Editor, Translation, File, Product, MenuType, Snippet) {
 	
 	$rootScope.template = 'content';
 	
@@ -839,6 +908,8 @@ angular.module('respond.controllers', [])
 	$scope.numColumns = 1;
 	$scope.totalSize = 0;
 	$scope.fileLimit = $rootScope.site.FileLimit;
+	$scope.isModified = false;
+	$scope.snippets = null;
 	
 	// watch for changes in the block collection
     $scope.$watchCollection('block', function(newValues, oldValues){
@@ -1004,11 +1075,22 @@ angular.module('respond.controllers', [])
     	
     });
     
+    // set modified
+    $scope.setModified = function(){
+	    
+	    $timeout(function(){
+	  		$scope.isModified = true;
+		});
+	    
+    }
+    
 	// get pageId
 	$scope.pageId = $stateParams.id;
 	
 	// save & publish
 	$scope.saveAndPublish = function(){
+	
+		$scope.isModified = false;
 		
 		var editor = $('#respond-editor');
 		
@@ -1068,6 +1150,8 @@ angular.module('respond.controllers', [])
 	
 	// saves a draft
 	$scope.saveDraft = function(){
+	
+		$scope.isModified = false;
 	
 		var editor = $('#respond-editor');
 		
@@ -1155,7 +1239,7 @@ angular.module('respond.controllers', [])
 		
 		Page.saveSettings($scope.pageId, 
 			$scope.page.Name, $scope.page.FriendlyId, $scope.page.Description, $scope.page.Keywords, $scope.page.Callout, 
-			$scope.page.Layout, $scope.page.Stylesheet, 
+			$scope.page.Layout, $scope.page.Stylesheet, $scope.page.IncludeOnly,
 			beginDate, endDate, $scope.page.Location, $scope.page.Latitude, $scope.page.Longitude,
 			function(data){});
 		
@@ -1163,6 +1247,19 @@ angular.module('respond.controllers', [])
 	
 	// back
 	$scope.back = function(){
+		
+		if($scope.isModified == true){
+			$('#changeDialog').modal('show');
+		}
+		else{
+			window.history.back();
+		}
+	}
+	
+	// continue
+	$scope.continueBack = function(){
+		$('#changeDialog').modal('hide');
+	
 		window.history.back();
 	}
 	
@@ -1300,6 +1397,24 @@ angular.module('respond.controllers', [])
 	
 	}
 	
+	// retrieve snippets
+	$scope.retrieveSnippets = function(){
+	
+		if($scope.snippets == null){
+	
+			// list images
+			Snippet.list(function(data){
+			
+				// debugging
+				if(Setup.debug)console.log('[respond.debug] Snippet.list');
+				
+				$scope.snippets = data;
+			});
+		
+		}
+	
+	}
+	
 	// updates files
 	$scope.updateFiles = function(){
 		// list files
@@ -1341,6 +1456,16 @@ angular.module('respond.controllers', [])
 	}
 	
 	$scope.updateDownloads();
+	
+	// list menutypes
+	MenuType.list(function(data){
+	
+		// debugging
+		if(Setup.debug)console.log('[respond.debug] MenuType.list');
+		console.log(data);
+		
+		$scope.menuTypes = data;
+	});
 	
 	// retrieve pre-cached editor items
 	$scope.editorItems = $rootScope.editorItems;
@@ -1412,14 +1537,16 @@ angular.module('respond.controllers', [])
 	// add image
 	$scope.addImage = function(image){
 	
-		console.log('$scope.addImage');
-		console.log(image);
-	
-	
 		var plugin = $('#imagesDialog').attr('data-plugin');
+		var action= $('#imagesDialog').attr('data-action');
 		
-		// build add
-		var fn = plugin + '.addImage';
+		// add or edit the image
+		if(action != undefined && action == 'edit'){
+			var fn = plugin + '.editImage';
+		}
+		else{
+			var fn = plugin + '.addImage';
+		}
 		
 		// execute method
 		utilities.executeFunctionByName(fn, window, image);
@@ -2663,7 +2790,7 @@ angular.module('respond.controllers', [])
 		// push admin, contributor and member
 		data.push({
 			RoleId: 'Admin',
-			Name: 'Admin', 
+			Name: i18n.t('Admin'), 
 			CanView: '', 
 			CanEdit: '', 
 			CanPublish: '', 
@@ -2672,7 +2799,7 @@ angular.module('respond.controllers', [])
 			
 		data.push({
 			RoleId: 'Contributor',
-			Name: 'Contributor', 
+			Name: i18n.t('Contributor'), 
 			CanView: '', 
 			CanEdit: '', 
 			CanPublish: '', 
@@ -2681,7 +2808,7 @@ angular.module('respond.controllers', [])
 			
 		data.push({
 			RoleId: 'Member',
-			Name: 'Member', 
+			Name: i18n.t('Member'), 
 			CanView: '', 
 			CanEdit: '', 
 			CanPublish: '', 

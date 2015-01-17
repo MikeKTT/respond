@@ -364,15 +364,19 @@ respond.element.h5 = {
 
 // p element
 respond.element.p = {
+	
+	map:[],
 
 	// initialize p
 	init:function(){
 	
 		// keydown event
-		$(document).on('keydown', '.respond-p [contentEditable=true]', function(event){
+		$(document).on('keydown keyup', '.respond-p [contentEditable=true]', function(event){
+			
+			respond.element.p.map[event.keyCode] = event.type == 'keydown';
 		
 			// ENTER KEY
-			if(event.keyCode == '13'){
+			if(respond.element.p.map[13] && !respond.element.p.map[16]){
 				
 				// get a reference to the editor
 				var editor = $(this).parents('.container');
@@ -1311,13 +1315,28 @@ respond.element.image = {
 		
 			var node = $(respond.editor.currNode);
 		
-			var form = $('.config[data-action="respond.element.table"]');
 			var display = $(this).val();
 			var src = $(node).find('img').attr('src');
 			var html = $(node).find('[contentEditable=true]').html() || '';
 			
 			// update html
 			$(node).html(respond.element.image.html(display, src, html));
+			
+		});
+		
+		$(document).on('click', '.respond-image img', function(){
+			
+			// tell the dialog which plugin is calling it
+			$('#imagesDialog').attr('data-plugin', 'respond.element.image');
+			$('#imagesDialog').attr('data-action', 'edit');
+			
+			// show dialog
+			$('#imagesDialog').modal('show');
+			
+			// get scope from page
+			var scope = angular.element($("section.main")).scope();
+			
+			scope.retrieveImages();
 			
 		});
 		
@@ -1343,6 +1362,20 @@ respond.element.image = {
 		
 		return content;
 		
+	},
+	
+	// edits an image
+	editImage:function(image){
+		
+		var node = $(respond.editor.currNode);
+		
+		var src = $(node).find('img').attr('src', image.fullUrl);
+		
+		// hide dialog
+		$('#imagesDialog').modal('hide');
+		
+		return true;
+	
 	},
 	
 	// adds an image
@@ -1387,6 +1420,7 @@ respond.element.image = {
 		
 		// tell the dialog which plugin is calling it
 		$('#imagesDialog').attr('data-plugin', 'respond.element.image');
+		$('#imagesDialog').attr('data-action', 'add');
 		
 		// show dialog
 		$('#imagesDialog').modal('show');
@@ -1459,7 +1493,7 @@ respond.element.image = {
   		if(link != ''){
 	  		// external links should have http
 			if(link.indexOf('http') == -1){
-				startLink = '<a ui-sref="'+link+'"';
+				startLink = '<a href="'+link+'" ui-sref="'+link+'"';
 			}
 			else{
 				startLink = '<a href="'+link+'"';
@@ -1573,6 +1607,8 @@ respond.element.pre = {
 		var description = $(node).attr('description');
 		var code = $(node).html();
 		
+		code = utilities.replaceAll(code, '&lt;', '<');
+		
 		// build html
 		var html = respond.editor.defaults.elementMenu +
 					'<div class="title respond-element"><i class="fa fa-terminal"></i> '+
@@ -1605,6 +1641,7 @@ respond.element.pre = {
 		attrs['ng-non-bindable'] = 'true';
 		
 		var code = $(node).find('textarea').val();
+		code = utilities.replaceAll(code, '<', '&lt;');
 		
 		// return element
 		return utilities.element('PRE', attrs, code);

@@ -368,7 +368,7 @@ class PagePublishResource extends Tonic\Resource {
 
             // publish the page
             Publish::PublishPage($pageId);
-
+            
             // return a json response
             $response = new Tonic\Response(Tonic\Response::OK);
         
@@ -586,6 +586,7 @@ class PageSaveResource extends Tonic\Resource {
             $callout = $request['callout'];
             $layout = $request['layout'];
             $stylesheet = $request['stylesheet'];
+            $includeOnly = $request['includeOnly'];
             $beginDate = $request['beginDate'];
             $endDate = $request['endDate'];
             $location = $request['location'];
@@ -625,7 +626,7 @@ class PageSaveResource extends Tonic\Resource {
             Page::EditSettings($pageId, $name, $friendlyId, $description, $keywords, $callout, 
             	$beginDate, $endDate, $timeZone,
             	$location, $latitude, $longitude,
-            	$layout, $stylesheet, $token->UserId);
+            	$layout, $stylesheet, $includeOnly, $token->UserId);
             
             return new Tonic\Response(Tonic\Response::OK);
         
@@ -784,6 +785,9 @@ class PageContentSaveResource extends Tonic\Resource {
                 $url = Publish::PublishPage($page['PageId'], false, true);
                 
                 Page::EditImage($page['PageId'], $image, $token->UserId);
+                
+                // republish common JS
+				Publish::PublishCommonJS($page['SiteId']);
             }
 
 			// return successful response
@@ -1646,6 +1650,39 @@ class PageListResource extends Tonic\Resource {
         $response = new Tonic\Response(Tonic\Response::OK);
         $response->contentType = 'applicaton/json';
         $response->body = json_encode($pages);
+
+        return $response;
+
+        return new Tonic\Response(Tonic\Response::CREATED);
+    }
+
+}
+
+/**
+ * This is a public API call that shows you the list of pages for the specified parameters in a list format
+ * @uri /page/published/count
+ */
+class PagePublishedCountResource extends Tonic\Resource {
+
+    /**
+     * @method POST
+     */
+    function post() {
+
+        parse_str($this->request->data, $request); // parse request
+        $siteId = $request['siteId'];
+        $friendlyId = $request['type'];     
+        
+        // get pagetype
+        $pageType = PageType::GetByFriendlyId($friendlyId, $siteId);
+
+		// get a count
+		$count = Page::GetPagesCount($siteId, $pageType['PageTypeId'], true);
+		
+        // return a json response
+        $response = new Tonic\Response(Tonic\Response::OK);
+        $response->contentType = 'applicaton/json';
+        $response->body = '{"count":'.$count.'}';
 
         return $response;
 
